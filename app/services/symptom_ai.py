@@ -41,10 +41,9 @@ FORMAT:
 
     try:
         response = client.chat.completions.create(
-            model="llama3-70b-8192",
+            model="llama3-8b-8192",   # ✅ SAFE MODEL
             messages=messages,
-            temperature=0.2,
-            max_tokens=600
+            temperature=0.2
         )
 
         content = response.choices[0].message.content
@@ -52,7 +51,6 @@ FORMAT:
         try:
             return json.loads(content)
         except Exception:
-            # fallback if AI returns non-JSON
             return {
                 "urgency": "medium",
                 "possible_condition": "General health issue",
