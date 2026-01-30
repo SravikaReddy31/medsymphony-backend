@@ -11,15 +11,14 @@ def analyze_symptoms(user_input: str):
             "content": """
 You are a medical symptom analysis assistant.
 
-LANGUAGE RULE:
+RULES:
 - If user writes in Telugu → reply only in SIMPLE TELUGU
 - If user writes in English → reply only in SIMPLE ENGLISH
 - Do not mix languages
 
-OUTPUT RULES:
+OUTPUT:
 - Reply ONLY in valid JSON
-- Use very simple words
-- Avoid complex medical terms
+- food_advice, exercise_advice, pain_relief MUST be arrays
 
 FORMAT:
 {
@@ -40,25 +39,36 @@ FORMAT:
 
     try:
         response = client.chat.completions.create(
-            model="llama3-8b-8192",   # ✅ WORKING MODEL
+            model="llama3-8b-8192",
             messages=messages,
             temperature=0.2
         )
 
         content = response.choices[0].message.content.strip()
+        data = json.loads(content)
 
-        try:
-            return json.loads(content)
-        except Exception:
-            return {
-                "urgency": "medium",
-                "possible_condition": "General health issue",
-                "food_advice": [],
-                "exercise_advice": [],
-                "pain_relief": [],
-                "disclaimer": "Please consult a doctor if symptoms continue."
-            }
+        return {
+            "urgency": data.get("urgency", "medium"),
+            "possible_condition": data.get(
+                "possible_condition", "General health issue"
+            ),
+            "food_advice": data.get("food_advice", []),
+            "exercise_advice": data.get("exercise_advice", []),
+            "pain_relief": data.get("pain_relief", []),
+            "disclaimer": data.get(
+                "disclaimer",
+                "Please consult a doctor if symptoms continue."
+            )
+        }
 
     except Exception as e:
         print("GROQ ERROR:", e)
-        raise Exception("AI service temporarily unavailable")
+
+        return {
+            "urgency": "medium",
+            "possible_condition": "General health issue",
+            "food_advice": [],
+            "exercise_advice": [],
+            "pain_relief": [],
+            "disclaimer": "Please consult a doctor if symptoms continue."
+        }

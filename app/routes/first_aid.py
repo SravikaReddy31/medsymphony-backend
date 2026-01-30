@@ -1,13 +1,16 @@
 from fastapi import APIRouter, HTTPException
-from app.schemas.first_aid_schema import FirstAidRequest
+from app.schemas.first_aid_schema import FirstAidRequest, FirstAidResponse
 from app.services.first_aid_ai import generate_first_aid
 
-router = APIRouter(prefix="/api", tags=["First Aid"])
+router = APIRouter()
 
-@router.post("/first-aid")
-def first_aid(data: FirstAidRequest):
+@router.post("/analyze", response_model=FirstAidResponse)
+def first_aid_api(request: FirstAidRequest):
     try:
-        result = generate_first_aid(data.problem)
-        return {"result": result}
+        return generate_first_aid(request.problem)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print("FIRST AID API ERROR:", e)
+        raise HTTPException(
+            status_code=503,
+            detail="AI service temporarily unavailable"
+        )

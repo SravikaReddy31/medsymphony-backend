@@ -1,5 +1,9 @@
 from pydantic import BaseModel
+from typing import List
+
 class FirstAidRequest(BaseModel):
     problem: str
+
 class FirstAidResponse(BaseModel):
-    result: str
+    steps: List[str]
+    warning: str
