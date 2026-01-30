@@ -1,8 +1,8 @@
 import json
-from openai import OpenAI, OpenAIError
-from app.config import settings
+import os
+from groq import Groq
 
-client = OpenAI(api_key=settings.OPENAI_API_KEY)
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 def analyze_symptoms(user_input: str):
     messages = [
@@ -11,19 +11,18 @@ def analyze_symptoms(user_input: str):
             "content": """
 You are a medical symptom analysis assistant.
 
-VERY IMPORTANT LANGUAGE RULE:
-- If the user's input is in Telugu, respond ONLY in SIMPLE TELUGU.
-- If the user's input is in English, respond ONLY in SIMPLE ENGLISH.
-- Do NOT mix languages.
+LANGUAGE RULE:
+- If user writes in Telugu → reply only in SIMPLE TELUGU
+- If user writes in English → reply only in SIMPLE ENGLISH
+- Do not mix languages
 
-IMPORTANT OUTPUT RULES:
-- Respond ONLY in valid JSON.
-- Do NOT explain anything outside JSON.
-- Always fill ALL fields.
-- Use very simple words suitable for common people.
-- Avoid complex medical terms.
+OUTPUT RULES:
+- Reply ONLY in valid JSON
+- No explanation outside JSON
+- Use very simple words
+- Avoid complex medical terms
 
-FORMAT (must be exactly this):
+FORMAT:
 {
   "urgency": "",
   "possible_condition": "",
@@ -42,18 +41,14 @@ FORMAT (must be exactly this):
 
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="llama3-70b-8192",
             messages=messages,
-            temperature=0.2,
-            timeout=30
+            temperature=0.2
         )
 
         content = response.choices[0].message.content.strip()
         return json.loads(content)
 
-    except OpenAIError:
-        # Honest failure
-        raise Exception("AI is temporarily unavailable. Please try again.")
-
-    except Exception:
-        raise Exception("Unable to process symptoms right now. Please retry.")
+    except Exception as e:
+        print("GROQ ERROR:", e)
+        raise Exception("AI service temporarily unavailable")

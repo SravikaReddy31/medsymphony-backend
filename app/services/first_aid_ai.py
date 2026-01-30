@@ -1,28 +1,35 @@
-from openai import OpenAI
-from app.config import settings   # where API key is stored
+import json
+import os
+from groq import Groq
 
-# Create OpenAI client
-client = OpenAI(api_key=settings.OPENAI_API_KEY)
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 def generate_first_aid(user_input: str):
     messages = [
         {
             "role": "system",
             "content": """
-You are a first aid medical assistant.
+You are a first aid assistant.
 
-The user input may be in English or Telugu.
-If the input is in English, respond ONLY in English.
-If the input is in Telugu, respond ONLY in Telugu.
-Do NOT mix languages.
+LANGUAGE RULE:
+- If user writes in Telugu → reply only in SIMPLE TELUGU
+- If user writes in English → reply only in SIMPLE ENGLISH
+- Do not mix languages
 
-TASK:
-- Identify the problem.
-- Mention urgency level (Normal / Moderate / Emergency).
-- Give simple first aid guidance.
-- Mention when to go to a hospital.
+RULES:
+- Use very simple words
+- Steps should be easy for common people
+- Avoid medical jargon
+- Respond ONLY in valid JSON
 
-Do NOT prescribe medicines.
+FORMAT:
+{
+  "emergency": "",
+  "steps": [],
+  "do_not_do": [],
+  "when_to_go_hospital": "",
+  "disclaimer": ""
+}
 """
         },
         {
@@ -31,10 +38,16 @@ Do NOT prescribe medicines.
         }
     ]
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=messages,
-        temperature=0.3
-    )
+    try:
+        response = client.chat.completions.create(
+            model="llama3-70b-8192",
+            messages=messages,
+            temperature=0.2
+        )
 
-    return response.choices[0].message.content
+        content = response.choices[0].message.content.strip()
+        return json.loads(content)
+
+    except Exception as e:
+        print("GROQ FIRST AID ERROR:", e)
+        raise Exception("AI service temporarily unavailable")
