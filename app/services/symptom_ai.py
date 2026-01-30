@@ -43,11 +43,24 @@ FORMAT:
         response = client.chat.completions.create(
             model="llama3-70b-8192",
             messages=messages,
-            temperature=0.2
+            temperature=0.2,
+            max_tokens=600
         )
 
-        content = response.choices[0].message.content.strip()
-        return json.loads(content)
+        content = response.choices[0].message.content
+
+        try:
+            return json.loads(content)
+        except Exception:
+            # fallback if AI returns non-JSON
+            return {
+                "urgency": "medium",
+                "possible_condition": "General health issue",
+                "food_advice": [],
+                "exercise_advice": [],
+                "pain_relief": [],
+                "disclaimer": "Please consult a doctor if symptoms continue."
+            }
 
     except Exception as e:
         print("GROQ ERROR:", e)

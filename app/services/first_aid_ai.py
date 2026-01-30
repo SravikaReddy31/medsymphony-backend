@@ -18,8 +18,8 @@ LANGUAGE RULE:
 
 RULES:
 - Use very simple words
-- Steps should be easy for common people
-- Avoid medical jargon
+- Steps must be easy for common people
+- Avoid medical terms
 - Respond ONLY in valid JSON
 
 FORMAT:
@@ -42,11 +42,30 @@ FORMAT:
         response = client.chat.completions.create(
             model="llama3-70b-8192",
             messages=messages,
-            temperature=0.2
+            temperature=0.2,
+            max_tokens=600
         )
 
-        content = response.choices[0].message.content.strip()
-        return json.loads(content)
+        content = response.choices[0].message.content
+
+        try:
+            return json.loads(content)
+        except Exception:
+            # Fallback if AI response is not valid JSON
+            return {
+                "emergency": "Possible emergency",
+                "steps": [
+                    "Stay calm",
+                    "Help the person sit or lie down",
+                    "Do not panic"
+                ],
+                "do_not_do": [
+                    "Do not give random medicines",
+                    "Do not ignore symptoms"
+                ],
+                "when_to_go_hospital": "If pain or problem continues",
+                "disclaimer": "This is basic first aid advice. Please consult a doctor."
+            }
 
     except Exception as e:
         print("GROQ FIRST AID ERROR:", e)
